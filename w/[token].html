@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ספירת מלאי — פותח אפליקציה</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      color: #fff;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .card {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 20px;
+      padding: 40px 30px;
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+      backdrop-filter: blur(10px);
+    }
+    h1 { font-size: 24px; margin-bottom: 10px; }
+    p { color: #a8b2d1; line-height: 1.6; margin-bottom: 20px; font-size: 15px; }
+    .spinner {
+      border: 3px solid rgba(255,255,255,0.1);
+      border-top: 3px solid #e94560;
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }
+    .btn {
+      display: inline-block;
+      background: #e94560;
+      color: #fff;
+      padding: 14px 28px;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: 600;
+      margin-top: 15px;
+      font-size: 16px;
+    }
+    .hint { font-size: 13px; color: #6c7a94; margin-top: 25px; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="spinner"></div>
+    <h1>📦 ספירת מלאי</h1>
+    <p>פותח את האפליקציה...</p>
+    <a id="open-btn" class="btn" href="#">פתח באפליקציה</a>
+    <p class="hint">אם האפליקציה לא נפתחה, ודא שהיא מותקנת בטלפון שלך.</p>
+  </div>
+  <script>
+    // Extract token from URL path: /w/TOKEN
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    const token = pathParts[pathParts.length - 1];
+    const deepLink = 'stocktaking://worker/' + token;
+
+    // Set button href
+    document.getElementById('open-btn').href = deepLink;
+
+    // Auto-redirect immediately
+    window.location.href = deepLink;
+  </script>
+</body>
+</html>
