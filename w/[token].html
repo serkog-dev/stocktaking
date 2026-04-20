@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ספירת מלאי — פותח אפליקציה</title>
+  <title>ספירת מלאי — פתיחת אפליקציה</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -20,14 +20,14 @@
       background: rgba(255,255,255,0.05);
       border: 1px solid rgba(255,255,255,0.1);
       border-radius: 20px;
-      padding: 40px 30px;
-      max-width: 400px;
+      padding: 36px 28px;
+      max-width: 420px;
       width: 100%;
       text-align: center;
       backdrop-filter: blur(10px);
     }
-    h1 { font-size: 24px; margin-bottom: 10px; }
-    p { color: #a8b2d1; line-height: 1.6; margin-bottom: 20px; font-size: 15px; }
+    h1 { font-size: 22px; margin-bottom: 12px; }
+    p { color: #a8b2d1; line-height: 1.6; margin-bottom: 18px; font-size: 15px; }
     .spinner {
       border: 3px solid rgba(255,255,255,0.1);
       border-top: 3px solid #e94560;
@@ -39,38 +39,139 @@
     }
     @keyframes spin { 0% { transform: rotate(0); } 100% { transform: rotate(360deg); } }
     .btn {
-      display: inline-block;
+      display: block;
       background: #e94560;
       color: #fff;
-      padding: 14px 28px;
-      border-radius: 10px;
+      padding: 16px 28px;
+      border-radius: 12px;
       text-decoration: none;
-      font-weight: 600;
-      margin-top: 15px;
-      font-size: 16px;
+      font-weight: 700;
+      font-size: 17px;
+      margin-top: 14px;
+      border: none;
+      cursor: pointer;
+      width: 100%;
     }
-    .hint { font-size: 13px; color: #6c7a94; margin-top: 25px; }
+    .btn-secondary {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+    }
+    .hint { font-size: 13px; color: #6c7a94; margin-top: 22px; line-height: 1.5; }
+    .steps {
+      text-align: right;
+      background: rgba(0,0,0,0.2);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-top: 16px;
+      font-size: 13px;
+      color: #a8b2d1;
+      line-height: 1.9;
+    }
+    .hidden { display: none; }
+    .big-emoji { font-size: 48px; margin-bottom: 10px; }
   </style>
 </head>
 <body>
   <div class="card">
-    <div class="spinner"></div>
-    <h1>📦 ספירת מלאי</h1>
-    <p>פותח את האפליקציה...</p>
-    <a id="open-btn" class="btn" href="#">פתח באפליקציה</a>
-    <p class="hint">אם האפליקציה לא נפתחה, ודא שהיא מותקנת בטלפון שלך.</p>
+    <!-- Stage 1: Trying to open app -->
+    <div id="stage-trying">
+      <div class="spinner"></div>
+      <h1>📦 ספירת מלאי</h1>
+      <p>פותח את האפליקציה...</p>
+      <button id="open-btn" class="btn">פתח באפליקציה</button>
+    </div>
+
+    <!-- Stage 2: App probably not installed -->
+    <div id="stage-install" class="hidden">
+      <div class="big-emoji">📥</div>
+      <h1>האפליקציה לא מותקנת</h1>
+      <p>כדי להתחיל לסרוק, התקן את האפליקציה פעם אחת.</p>
+
+      <a id="download-btn" class="btn" href="#">
+        הורד אפליקציה
+      </a>
+
+      <div class="steps">
+        <div>1️⃣ לחץ "הורד אפליקציה"</div>
+        <div>2️⃣ לחץ על הקובץ שהורד</div>
+        <div>3️⃣ אשר "התקן ממקור לא ידוע"</div>
+        <div>4️⃣ חזור להודעה ולחץ על הקישור</div>
+      </div>
+
+      <button id="retry-btn" class="btn btn-secondary">
+        נסה שוב לפתוח
+      </button>
+
+      <p class="hint">
+        אם האפליקציה כבר מותקנת אצלך, לחץ "נסה שוב לפתוח".
+      </p>
+    </div>
   </div>
+
   <script>
+    // Config
+    var APK_URL = 'https://github.com/serkog-dev/stocktaking/releases/latest/download/stocktaking.apk';
+
     // Extract token from URL path: /w/TOKEN
-    const pathParts = window.location.pathname.split('/').filter(Boolean);
-    const token = pathParts[pathParts.length - 1];
-    const deepLink = 'stocktaking://worker/' + token;
+    var pathParts = window.location.pathname.split('/').filter(Boolean);
+    var token = pathParts[pathParts.length - 1];
+    var deepLink = 'stocktaking://worker/' + token;
 
-    // Set button href
-    document.getElementById('open-btn').href = deepLink;
+    var stageTrying = document.getElementById('stage-trying');
+    var stageInstall = document.getElementById('stage-install');
+    var openBtn = document.getElementById('open-btn');
+    var downloadBtn = document.getElementById('download-btn');
+    var retryBtn = document.getElementById('retry-btn');
 
-    // Auto-redirect immediately
-    window.location.href = deepLink;
+    openBtn.onclick = function () { tryOpen(); };
+    retryBtn.onclick = function () { tryOpen(true); };
+    downloadBtn.href = APK_URL;
+
+    var fallbackTimer = null;
+
+    function tryOpen(showSpinnerAgain) {
+      if (showSpinnerAgain) {
+        stageInstall.classList.add('hidden');
+        stageTrying.classList.remove('hidden');
+      }
+
+      // Attempt to open the app via hidden iframe (bypasses Chrome's popup block
+      // for custom schemes better than window.location).
+      var iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = deepLink;
+      document.body.appendChild(iframe);
+
+      // Also set window.location after a tick, as fallback for some browsers
+      setTimeout(function () {
+        window.location.href = deepLink;
+      }, 100);
+
+      // If the page is still visible after 2.5 seconds → app is probably not installed
+      clearTimeout(fallbackTimer);
+      fallbackTimer = setTimeout(function () {
+        if (!document.hidden) {
+          showInstallStage();
+        }
+      }, 2500);
+    }
+
+    function showInstallStage() {
+      stageTrying.classList.add('hidden');
+      stageInstall.classList.remove('hidden');
+    }
+
+    // If the page is hidden (user switched to app) → app opened successfully
+    document.addEventListener('visibilitychange', function () {
+      if (document.hidden) {
+        clearTimeout(fallbackTimer);
+      }
+    });
+
+    // Auto-attempt on page load
+    window.addEventListener('load', function () {
+      setTimeout(tryOpen, 300);
+    });
   </script>
 </body>
 </html>
